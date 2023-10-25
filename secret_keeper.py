@@ -32,8 +32,7 @@ class SecretKeeper:
         pc_name: str
 
     database: Database
-    customer_user: ParserUser
-    developer_user: ParserUser
+    admin_user: ParserUser
     developer: Developer
 
     def __init__(self, settings: "Settings") -> None:

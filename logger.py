@@ -47,11 +47,7 @@ class Logger:
             # в консоль
             cls.construct_handler(cls.settings.CONSOLE_LOG_LEVEL, True)
         ]
-        if cls.settings.PARSING_ID is None:
-            parsing = "not a parsing"
-        else:
-            parsing = f"parsing: {cls.settings.PARSING_ID}"
-        logger = logging.LoggerAdapter(logger, {"parsing": parsing})
+        logger = logging.LoggerAdapter(logger)
         return logger
 
 
