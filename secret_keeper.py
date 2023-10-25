@@ -1,7 +1,8 @@
 import json
+from typing import TYPE_CHECKING, TypedDict
 
-from typing import TYPE_CHECKING
 
+UserBot = TypedDict("UserBot", {"name": str, "phone": str})
 
 if TYPE_CHECKING:
     from telegram_parser.settings import Settings
@@ -31,14 +32,21 @@ class SecretKeeper:
     class Developer(Module):
         pc_name: str
 
+    class Pyrogram(Module):
+        api_id: int
+        api_hash: str
+        data: list[UserBot]
+
     database: Database
     admin_user: ParserUser
     developer: Developer
+    pyrogram: Pyrogram
 
     def __init__(self, settings: "Settings") -> None:
         self.add_module("database", settings.DATABASE_CREDENTIALS_PATH)
         self.add_module("admin_user", settings.ADMIN_USER_CREDENTIALS_PATH)
         self.add_module("developer", settings.DEVELOPER_CREDENTIALS_PATH)
+        self.add_module("pyrogram", settings.PYROGRAM_CREDENTIALS_PATH)
 
     @staticmethod
     def read_json(path: str) -> dict:

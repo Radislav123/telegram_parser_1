@@ -1,13 +1,10 @@
 from django.contrib.auth import get_user_model
-from django.core.management.base import BaseCommand
 
 from secret_keeper import SecretKeeper
-from telegram_parser.settings import Settings
+from telegram_parser.management.commands import telegram_parser_command
 
 
-class Command(BaseCommand):
-    settings = Settings()
-
+class Command(telegram_parser_command.TelegramParserCommand):
     def handle(self, *args, **options):
         creating_users = (self.settings.secrets.admin_user,)
         for user in creating_users:

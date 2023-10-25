@@ -1,5 +1,7 @@
 .idea/
 logs/
 migrations/
+pyrogram/
+!secrets/*
 
 db.sqlite3
