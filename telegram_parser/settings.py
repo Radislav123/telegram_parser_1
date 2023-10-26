@@ -8,7 +8,8 @@ class Settings:
     APP_NAME = TelegramParserConfig.name
 
     def __init__(self):
-        self.PARSING_DATA_FOLDER = "parsing_data"
+        self.TEST_DATA_FOLDER = "test_data"
+        self.TEST_DATA_PATH = f"{self.TEST_DATA_FOLDER}/data.json"
 
         # Пути секретов
         self.SECRETS_FOLDER = "secrets"

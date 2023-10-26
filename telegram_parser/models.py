@@ -16,17 +16,15 @@ class BaseModel(models.Model):
         return cls._meta.get_field(field_name).verbose_name
 
 
-class UserBot(BaseModel):
-    pass
-
-
 # проверяемые чаты
 class Channel(BaseModel):
-    telegram_id = models.IntegerField()
+    name = models.CharField(max_length = 255)
+    telegram_id = models.IntegerField(unique = True)
+    userbot = models.CharField(max_length = 255, null = True)
 
 
 class Project(BaseModel):
-    name = models.CharField(max_length = 256)
+    name = models.CharField(max_length = 255, unique = True)
     keywords = models.TextField()
     stop_words = models.TextField()
     post_channel = models.IntegerField()

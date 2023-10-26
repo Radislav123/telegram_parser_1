@@ -8,13 +8,10 @@ from telegram_parser.management.commands import telegram_parser_command
 
 
 class Command(telegram_parser_command.TelegramParserCommand):
-    def handle(self, *args, **options):
-        try:
-            asyncio.run(self.run())
-        except KeyboardInterrupt:
-            print(123)
+    def handle(self, *args, **options) -> None:
+        asyncio.run(self.run())
 
-    async def run(self):
+    async def run(self) -> None:
         # создается папка для хранения сессий pyrogram
         Path(self.settings.PYROGRAM_SESSION_FOLDER).mkdir(parents = True, exist_ok = True)
         userbots: list[pyrogram.Client] = []
@@ -43,10 +40,22 @@ class Command(telegram_parser_command.TelegramParserCommand):
             workdir = self.settings.PYROGRAM_SESSION_FOLDER
         )
 
-        userbot.on_message(pyrogram.filters.private)(hello)
+        userbot.on_message(pyrogram.filters.text)(message_reply)
+        userbot.on_message(pyrogram.filters.photo)(photo_reply)
+        userbot.on_message()(reply)
 
         return userbot
 
 
-async def hello(client, message):
-    await message.reply("Hello from Pyrogram!")
+async def reply(client, message) -> None:
+    print(client)
+    print(message)
+    await message.reply("reply")
+
+
+async def message_reply(client, message) -> None:
+    await message.reply("message reply")
+
+
+async def photo_reply(client, message) -> None:
+    await message.reply("photo reply")

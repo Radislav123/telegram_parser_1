@@ -46,10 +46,6 @@ class BaseAdmin(admin.ModelAdmin):
         return tuple(field.name for field in self.model._meta.fields)
 
 
-class UserBotAdmin(BaseAdmin):
-    model = models.UserBot
-
-
 class ChanelAdmin(BaseAdmin):
     model = models.Channel
 
@@ -58,5 +54,5 @@ class ProjectAdmin(BaseAdmin):
     model = models.Project
 
 
-model_admins_to_register = [UserBotAdmin, ChanelAdmin, ProjectAdmin]
+model_admins_to_register = [ChanelAdmin, ProjectAdmin]
 register_models(model_admins_to_register)

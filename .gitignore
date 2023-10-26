@@ -2,6 +2,8 @@
 logs/
 migrations/
 pyrogram/
-!secrets/*
+test_data/
+secrets/
 
 db.sqlite3
+temp*
