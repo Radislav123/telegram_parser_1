@@ -37,7 +37,7 @@ class SecretKeeper:
     class Pyrogram(Module):
         api_id: int
         api_hash: str
-        data: list[UserBot]
+        userbots: list[UserBot]
 
     class TestData(Module):
         channels: list[Channel]

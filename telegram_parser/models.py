@@ -18,7 +18,7 @@ class BaseModel(models.Model):
 
 # проверяемые чаты
 class Channel(BaseModel):
-    name = models.CharField(max_length = 255)
+    name = models.CharField(max_length = 255, null = True)
     telegram_id = models.IntegerField(unique = True)
     userbot = models.CharField(max_length = 255, null = True)
 

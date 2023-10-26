@@ -11,6 +11,9 @@ class Settings:
         self.TEST_DATA_FOLDER = "test_data"
         self.TEST_DATA_PATH = f"{self.TEST_DATA_FOLDER}/data.json"
 
+        self.KEYWORD_SEPARATOR = '\n'
+        self.STOP_WORD_SEPARATOR = '\n'
+
         # Пути секретов
         self.SECRETS_FOLDER = "secrets"
 

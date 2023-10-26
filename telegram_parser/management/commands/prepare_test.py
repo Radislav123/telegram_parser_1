@@ -25,8 +25,8 @@ class Command(create_admin.Command):
         projects = [
             models.Project(
                 name = project["name"],
-                keywords = "\n".join(project["keywords"]),
-                stop_words = "\n".join(project["stop_words"]),
+                keywords = self.settings.KEYWORD_SEPARATOR.join(project["keywords"]),
+                stop_words = self.settings.STOP_WORD_SEPARATOR.join(project["stop_words"]),
                 post_channel = project["post_channel"]
             ) for project in self.settings.secrets.test_data.projects
         ]
