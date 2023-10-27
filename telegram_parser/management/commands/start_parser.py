@@ -30,21 +30,61 @@ class UserBot(pyrogram.Client):
         projects = await sync_to_async(set)(models.Project.objects.all())
         for project in projects:
             if self.check(message, project):
-                # todo: добавить форматирование сообщения
+                chat = await self.get_chat(message.chat.id)
+                text = []
+
+                if chat.title is not None:
+                    title = f"[{chat.title}]({chat.invite_link})"
+                else:
+                    if chat.type == pyrogram.enums.ChatType.PRIVATE:
+                        channel_object: models.Channel = await models.Channel.objects.aget(telegram_id = chat.id)
+                        title = channel_object.name
+                    elif chat.type == pyrogram.enums.ChatType.BOT:
+                        title = f"[{message.from_user.first_name}](https://t.me/{message.from_user.username})"
+                    else:
+                        title = chat.invite_link
+                text.append(f"Чат: {title}")
+                text.append(f"Дата и время: {message.date}")
+
+                if message.from_user is not None:
+                    if message.from_user.is_bot:
+                        author = f"[{message.from_user.first_name}](https://t.me/{message.from_user.username})"
+                    else:
+                        if message.from_user.first_name is not None:
+                            username = message.from_user.first_name
+                        elif message.from_user.last_name is not None:
+                            username = message.from_user.last_name
+                        else:
+                            username = message.from_user.username
+                        author = f"[{username}](tg://user?id={message.from_user.id})"
+                    text.append(f"Автор: {author}")
+
+                text.extend(
+                    [
+                        "",
+                        message.text
+                    ]
+                )
                 await self.send_message(
                     project.post_channel,
-                    f"test: {message.text}"
+                    "\n".join(text),
+                    pyrogram.enums.ParseMode.MARKDOWN,
+                    disable_web_page_preview = True
                 )
 
     def check(self, message: pyrogram.types.Message, project: models.Project) -> bool:
         check = False
+        if message.text is None:
+            text = ""
+        else:
+            text = message.text.lower()
         for keyword in project.keywords.split(self.settings.KEYWORD_SEPARATOR):
-            if keyword in message.text:
+            if keyword.lower() in text:
                 check = True
                 break
         if check:
             for stop_word in project.stop_words.split(self.settings.STOP_WORD_SEPARATOR):
-                if stop_word in message.text:
+                if stop_word.lower() in text:
                     check = False
                     break
         return check
