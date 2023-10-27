@@ -21,7 +21,7 @@ class Command(telegram_parser_command.TelegramParserCommand):
                 name = userbot["name"],
                 phone = userbot["phone"],
                 day_channels_join_counter = 0
-            ) for userbot in self.settings.secrets.pyrogram.userbots.values()
+            ) for userbot in self.settings.secrets.test_data.userbots.values()
         ]
         models.Userbot.objects.bulk_create(userbots)
 

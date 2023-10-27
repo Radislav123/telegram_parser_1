@@ -6,11 +6,11 @@ import pyrogram.errors.exceptions
 from asgiref.sync import sync_to_async
 
 import logger
-import secret_keeper
 from telegram_parser import models, settings
 from telegram_parser.management.commands import telegram_parser_command
 
 
+# todo: настроить доступ к административной панели из интернета
 class UserbotClient(pyrogram.Client):
     settings = settings.Settings()
     db_object: models.Userbot
@@ -48,6 +48,8 @@ class UserbotClient(pyrogram.Client):
                             self.channels[channel.telegram_id] = channel
                         except Exception as exception:
                             self.logger.exception(str(exception))
+            else:
+                self.channels[channel.telegram_id] = channel
 
         await self.db_object.asave()
 
@@ -130,9 +132,9 @@ class Command(telegram_parser_command.TelegramParserCommand):
         channels = {x.telegram_id: x for x in await sync_to_async(set)(models.Channel.objects.all())}
 
         self.logger.info("Userbots are starting.")
-        for user in self.settings.secrets.pyrogram.userbots.values():
+        for user in await sync_to_async(list)(models.Userbot.objects.all()):
             userbot = await self.get_userbot(user, channels)
-            userbots[user["phone"]] = userbot
+            userbots[user.phone] = userbot
             channels = {channel_id: channel for channel_id, channel in channels.items()
                         if channel_id not in userbot.channels}
         self.logger.info("All userbots were started.")
@@ -147,12 +149,12 @@ class Command(telegram_parser_command.TelegramParserCommand):
         self.logger.info("All userbots were stopped.")
 
     # todo: зарегистрировать api_id и api_hash на заказчика
-    async def get_userbot(self, user: secret_keeper.Userbot, channels: dict[int, models.Channel]) -> UserbotClient:
+    async def get_userbot(self, user: models.Userbot, channels: dict[int, models.Channel]) -> UserbotClient:
         userbot = UserbotClient(
-            user["name"],
+            user.name,
             self.settings.secrets.pyrogram.api_id,
             self.settings.secrets.pyrogram.api_hash,
-            phone_number = user["phone"],
+            phone_number = user.phone,
             workdir = self.settings.PYROGRAM_SESSION_FOLDER
         )
 

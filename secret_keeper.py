@@ -37,11 +37,11 @@ class SecretKeeper:
     class Pyrogram(Module):
         api_id: int
         api_hash: str
-        userbots: dict[str, Userbot]
 
     class TestData(Module):
         channels: list[Channel]
         projects: list[Project]
+        userbots: dict[str, Userbot]
 
     database: Database
     admin_user: ParserUser
@@ -54,14 +54,17 @@ class SecretKeeper:
         self.add_module("admin_user", settings.ADMIN_USER_CREDENTIALS_PATH)
         self.add_module("developer", settings.DEVELOPER_CREDENTIALS_PATH)
         self.add_module("pyrogram", settings.PYROGRAM_CREDENTIALS_PATH)
-        self.add_module("test_data", settings.TEST_DATA_PATH)
-        self.prepare()
+        try:
+            self.add_module("test_data", settings.TEST_DATA_PATH)
+            self.prepare_test_data()
+        except FileNotFoundError:
+            pass
 
-    def prepare(self) -> None:
+    def prepare_test_data(self) -> None:
         # до этого момента это list
         # noinspection PyTypeChecker
-        userbots: list[Userbot] = self.pyrogram.userbots
-        self.pyrogram.userbots = {x["phone"]: x for x in userbots}
+        userbots: list[Userbot] = self.test_data.userbots
+        self.test_data.userbots = {x["phone"]: x for x in userbots}
 
     @staticmethod
     def read_json(path: str) -> dict:
