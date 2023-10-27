@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, TypedDict
 if TYPE_CHECKING:
     from telegram_parser.settings import Settings
 
-UserBot = TypedDict("UserBot", {"name": str, "phone": str})
+Userbot = TypedDict("Userbot", {"name": str, "phone": str})
 Channel = TypedDict("Channel", {"name": str, "telegram_id": int})
 Project = TypedDict("Project", {"name": str, "keywords": list[str], "stop_words": list[str], "post_channel": int})
 
@@ -37,7 +37,7 @@ class SecretKeeper:
     class Pyrogram(Module):
         api_id: int
         api_hash: str
-        userbots: list[UserBot]
+        userbots: dict[str, Userbot]
 
     class TestData(Module):
         channels: list[Channel]
@@ -55,6 +55,13 @@ class SecretKeeper:
         self.add_module("developer", settings.DEVELOPER_CREDENTIALS_PATH)
         self.add_module("pyrogram", settings.PYROGRAM_CREDENTIALS_PATH)
         self.add_module("test_data", settings.TEST_DATA_PATH)
+        self.prepare()
+
+    def prepare(self) -> None:
+        # до этого момента это list
+        # noinspection PyTypeChecker
+        userbots: list[Userbot] = self.pyrogram.userbots
+        self.pyrogram.userbots = {x["phone"]: x for x in userbots}
 
     @staticmethod
     def read_json(path: str) -> dict:

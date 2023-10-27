@@ -14,6 +14,8 @@ class Settings:
         self.KEYWORD_SEPARATOR = '\n'
         self.STOP_WORD_SEPARATOR = '\n'
 
+        self.MAX_DAY_CHANNEL_JOINS = 30
+
         # Пути секретов
         self.SECRETS_FOLDER = "secrets"
 

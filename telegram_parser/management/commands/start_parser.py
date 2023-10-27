@@ -1,35 +1,61 @@
 import asyncio
+import datetime
 from pathlib import Path
 
-import pyrogram
+import pyrogram.errors.exceptions
 from asgiref.sync import sync_to_async
 
+import logger
 import secret_keeper
 from telegram_parser import models, settings
 from telegram_parser.management.commands import telegram_parser_command
 
 
-class UserBot(pyrogram.Client):
+class UserbotClient(pyrogram.Client):
     settings = settings.Settings()
-    channels: dict[int, models.Channel]
+    db_object: models.Userbot
+
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+
+        self.logger = logger.Logger(self.__class__.__name__)
+        self.channels: dict[int, models.Channel] = {}
 
     async def prepare(self, channels: dict[int, models.Channel]) -> None:
-        # todo: добавить проверку подписок ботов на каналы
-        # todo: добавить вступление в чаты, на которые не подписан
-        self.channels = channels
-        for channel in self.channels.values():
-            channel.userbot = self
-        if self.name is None:
-            label = self.phone_number
-        else:
-            label = self.name
-        await models.Channel.objects.filter(id__in = (x.id for x in self.channels.values())).aupdate(userbot = label)
+        self.db_object = await models.Userbot.objects.aget(phone = self.phone_number)
+
+        await self.check_channels(channels)
+        await models.Channel.objects.filter(id__in = (x.id for x in self.channels.values())).aupdate(
+            userbot = self.db_object
+        )
+
+    async def check_channels(self, channels: dict[int, models.Channel]) -> None:
+        if self.db_object.last_channel_join_date < datetime.date.today():
+            self.db_object.day_channels_join_counter = 0
+
+        for channel in channels.values():
+            chat = await self.get_chat(channel.telegram_id)
+            if chat.type != pyrogram.enums.ChatType.PRIVATE and chat.type != pyrogram.enums.ChatType.BOT:
+                try:
+                    await self.get_chat_member(channel.telegram_id, "me")
+                    self.channels[channel.telegram_id] = channel
+                except pyrogram.errors.exceptions.UserNotParticipant:
+                    if self.db_object.day_channels_join_counter < self.settings.MAX_DAY_CHANNEL_JOINS:
+                        self.db_object.last_channel_join_date = datetime.date.today()
+                        try:
+                            await self.join_chat(channel.telegram_id)
+                            self.db_object.day_channels_join_counter += 1
+                            self.channels[channel.telegram_id] = channel
+                        except Exception as exception:
+                            self.logger.exception(str(exception))
+
+        await self.db_object.asave()
 
     @staticmethod
-    async def track(self: "UserBot", message: pyrogram.types.Message) -> None:
+    async def track(self: "UserbotClient", message: pyrogram.types.Message) -> None:
         projects = await sync_to_async(set)(models.Project.objects.all())
         for project in projects:
-            if self.check(message, project):
+            if self.check_project(message, project):
                 chat = await self.get_chat(message.chat.id)
                 text = []
 
@@ -59,12 +85,8 @@ class UserBot(pyrogram.Client):
                         author = f"[{username}](tg://user?id={message.from_user.id})"
                     text.append(f"Автор: {author}")
 
-                text.extend(
-                    [
-                        "",
-                        message.text
-                    ]
-                )
+                text.append("")
+                text.append(message.text)
                 await self.send_message(
                     project.post_channel,
                     "\n".join(text),
@@ -72,7 +94,7 @@ class UserBot(pyrogram.Client):
                     disable_web_page_preview = True
                 )
 
-    def check(self, message: pyrogram.types.Message, project: models.Project) -> bool:
+    def check_project(self, message: pyrogram.types.Message, project: models.Project) -> bool:
         check = False
         if message.text is None:
             text = ""
@@ -90,7 +112,7 @@ class UserBot(pyrogram.Client):
         return check
 
 
-async def channel_filter(_, userbot: UserBot, query: pyrogram.types.Message) -> bool:
+async def channel_filter(_, userbot: UserbotClient, query: pyrogram.types.Message) -> bool:
     return query.chat.id in userbot.channels
 
 
@@ -108,11 +130,14 @@ class Command(telegram_parser_command.TelegramParserCommand):
         channels = {x.telegram_id: x for x in await sync_to_async(set)(models.Channel.objects.all())}
 
         self.logger.info("Userbots are starting.")
-        for user in self.settings.secrets.pyrogram.userbots:
+        for user in self.settings.secrets.pyrogram.userbots.values():
             userbot = await self.get_userbot(user, channels)
-            await userbot.start()
             userbots[user["phone"]] = userbot
+            channels = {channel_id: channel for channel_id, channel in channels.items()
+                        if channel_id not in userbot.channels}
         self.logger.info("All userbots were started.")
+        if len(channels) > 0:
+            self.logger.warning(f"Not tracking channels amount: {len(channels)}.")
 
         await pyrogram.idle()
 
@@ -122,16 +147,17 @@ class Command(telegram_parser_command.TelegramParserCommand):
         self.logger.info("All userbots were stopped.")
 
     # todo: зарегистрировать api_id и api_hash на заказчика
-    async def get_userbot(self, user: secret_keeper.UserBot, channels: dict[int, models.Channel]) -> pyrogram.Client:
-        userbot = UserBot(
+    async def get_userbot(self, user: secret_keeper.Userbot, channels: dict[int, models.Channel]) -> UserbotClient:
+        userbot = UserbotClient(
             user["name"],
             self.settings.secrets.pyrogram.api_id,
             self.settings.secrets.pyrogram.api_hash,
             phone_number = user["phone"],
             workdir = self.settings.PYROGRAM_SESSION_FOLDER
         )
-        # todo: распределять каналы по ботам равномерно?
-        await userbot.prepare(channels)
 
         userbot.on_message(channel_filter)(userbot.track)
+        await userbot.start()
+        await userbot.prepare(channels)
+
         return userbot

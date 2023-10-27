@@ -1,12 +1,14 @@
-from django.contrib.auth import get_user_model
-from django.contrib.auth import models as auth_models
+from django.contrib.auth import get_user_model, models as auth_models
 
 from secret_keeper import SecretKeeper
 from telegram_parser.management.commands import telegram_parser_command
 
 
 class Command(telegram_parser_command.TelegramParserCommand):
-    def handle(self, *args, **options) -> list[auth_models.User]:
+    def handle(self, *args, **options) -> None:
+        self.create_all_users()
+
+    def create_all_users(self) -> list[auth_models.User]:
         return [self.create_user(user) for user in (self.settings.secrets.admin_user,)]
 
     def create_user(self, user: SecretKeeper.ParserUser) -> auth_models.User:

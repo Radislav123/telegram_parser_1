@@ -16,11 +16,18 @@ class BaseModel(models.Model):
         return cls._meta.get_field(field_name).verbose_name
 
 
+class Userbot(BaseModel):
+    name = models.CharField(max_length = 255, null = True)
+    phone = models.CharField(max_length = 50, unique = True)
+    last_channel_join_date = models.DateField(auto_now = True)
+    day_channels_join_counter = models.IntegerField()
+
+
 # проверяемые чаты
 class Channel(BaseModel):
     name = models.CharField(max_length = 255, null = True)
     telegram_id = models.IntegerField(unique = True)
-    userbot = models.CharField(max_length = 255, null = True)
+    userbot = models.ForeignKey(Userbot, on_delete = models.RESTRICT, null = True)
 
 
 class Project(BaseModel):
