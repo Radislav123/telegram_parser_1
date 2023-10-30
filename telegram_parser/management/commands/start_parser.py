@@ -80,9 +80,6 @@ class UserbotClient(pyrogram.Client):
                     else:
                         title = chat.invite_link
                 text.append(f"Чат: {title}")
-                print(message.date)
-                print(message.date.now())
-                print(message)
                 text.append(f"Дата и время: {message.date}")
 
                 if message.from_user is not None:
@@ -98,13 +95,16 @@ class UserbotClient(pyrogram.Client):
                         author = f"[{username}](tg://user?id={message.from_user.id})"
                     text.append(f"Автор: {author}")
 
-                text.append("")
-                text.append(message.text)
                 await self.send_message(
                     project.post_channel,
                     "\n".join(text),
                     pyrogram.enums.ParseMode.MARKDOWN,
                     disable_web_page_preview = True
+                )
+                await self.forward_messages(
+                    project.post_channel,
+                    message.chat.id,
+                    message.id
                 )
 
     def check_project(self, message: pyrogram.types.Message, project: models.Project) -> bool:
