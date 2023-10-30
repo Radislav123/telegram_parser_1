@@ -80,7 +80,8 @@ class UserbotClient(pyrogram.Client):
                     else:
                         title = chat.invite_link
                 text.append(f"Чат: {title}")
-                text.append(f"Дата и время: {message.date}")
+                # показывается время с учетом часового пояса сервера
+                # text.append(f"Дата и время: {message.date}")
 
                 if message.from_user is not None:
                     if message.from_user.is_bot:
