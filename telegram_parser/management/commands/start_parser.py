@@ -10,7 +10,6 @@ from telegram_parser import models, settings
 from telegram_parser.management.commands import telegram_parser_command
 
 
-# todo: настроить доступ к административной панели из интернета
 class UserbotClient(pyrogram.Client):
     settings = settings.Settings()
     db_object: models.Userbot
@@ -148,7 +147,6 @@ class Command(telegram_parser_command.TelegramParserCommand):
             await userbot.stop()
         self.logger.info("All userbots were stopped.")
 
-    # todo: зарегистрировать api_id и api_hash на заказчика
     async def get_userbot(self, user: models.Userbot, channels: dict[int, models.Channel]) -> UserbotClient:
         userbot = UserbotClient(
             user.name,
