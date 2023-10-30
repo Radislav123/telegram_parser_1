@@ -96,8 +96,6 @@ class UserbotClient(pyrogram.Client):
                 )
 
     def check_project(self, message: pyrogram.types.Message, project: models.Project) -> bool:
-        # todo: remove print
-        print(message.text)
         check = False
         if message.text is None:
             text = ""
@@ -138,6 +136,12 @@ class Command(telegram_parser_command.TelegramParserCommand):
             userbots[user.phone] = userbot
             channels = {channel_id: channel for channel_id, channel in channels.items()
                         if channel_id not in userbot.channels}
+            # todo: remove this
+            projects = await sync_to_async(set)(models.Project.objects.all())
+            await userbot.send_message(
+                projects.pop().post_channel,
+                "userbot starts"
+            )
         self.logger.info("All userbots were started.")
         if len(channels) > 0:
             self.logger.warning(f"Not tracking channels amount: {len(channels)}.")
