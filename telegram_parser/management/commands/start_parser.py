@@ -10,6 +10,15 @@ from telegram_parser import models, settings
 from telegram_parser.management.commands import telegram_parser_command
 
 
+def split(text: str, separators: set[str]) -> list[str]:
+    splitted_text = [text]
+    for separator in separators:
+        splitted_text = text.split(separator)
+        if len(splitted_text) > 1:
+            break
+    return [x.strip() for x in splitted_text]
+
+
 class UserbotClient(pyrogram.Client):
     settings = settings.Settings()
     db_object: models.Userbot
@@ -21,16 +30,12 @@ class UserbotClient(pyrogram.Client):
         self.channels: dict[int, models.Channel] = {}
 
     async def prepare(self, channels: dict[int, models.Channel]) -> None:
-        # todo: remove print
-        print("enter prepare")
         self.db_object = await models.Userbot.objects.aget(phone = self.phone_number)
 
         await self.check_channels(channels)
         await models.Channel.objects.filter(id__in = (x.id for x in self.channels.values())).aupdate(
             userbot = self.db_object
         )
-        # todo: remove print
-        print("exit prepare")
 
     async def check_channels(self, channels: dict[int, models.Channel]) -> None:
         if self.db_object.last_channel_join_date < datetime.date.today():
@@ -58,8 +63,6 @@ class UserbotClient(pyrogram.Client):
 
     @staticmethod
     async def track(self: "UserbotClient", message: pyrogram.types.Message) -> None:
-        # todo: remove print
-        print("enter track")
         projects = await sync_to_async(set)(models.Project.objects.all())
         for project in projects:
             if self.check_project(message, project):
@@ -100,28 +103,22 @@ class UserbotClient(pyrogram.Client):
                     pyrogram.enums.ParseMode.MARKDOWN,
                     disable_web_page_preview = True
                 )
-        # todo: remove print
-        print("exit track")
 
     def check_project(self, message: pyrogram.types.Message, project: models.Project) -> bool:
-        # todo: remove print
-        print("enter check_project")
         check = False
         if message.text is None:
             text = ""
         else:
             text = message.text.lower()
-        for keyword in project.keywords.split(self.settings.KEYWORD_SEPARATOR):
+        for keyword in split(project.keywords, self.settings.KEYWORD_SEPARATORS):
             if keyword.lower() in text:
                 check = True
                 break
         if check:
-            for stop_word in project.stop_words.split(self.settings.STOP_WORD_SEPARATOR):
+            for stop_word in split(project.stop_words, self.settings.STOP_WORD_SEPARATORS):
                 if stop_word.lower() in text:
                     check = False
                     break
-        # todo: remove print
-        print("exit check_project")
         return check
 
 

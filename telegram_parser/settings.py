@@ -11,8 +11,8 @@ class Settings:
         self.TEST_DATA_FOLDER = "test_data"
         self.TEST_DATA_PATH = f"{self.TEST_DATA_FOLDER}/data.json"
 
-        self.KEYWORD_SEPARATOR = '\n'
-        self.STOP_WORD_SEPARATOR = '\n'
+        self.KEYWORD_SEPARATORS = ['\n', '\r', '\r\n']
+        self.STOP_WORD_SEPARATORS = ['\n', '\r', '\r\n']
 
         self.MAX_DAY_CHANNEL_JOINS = 30
 
