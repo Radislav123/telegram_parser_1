@@ -24,6 +24,7 @@ class BaseAdmin(admin.ModelAdmin):
     # {вставляемое_поле: поле_после_которого_вставляется}
     # {field: None} - вставится последним
     extra_list_display: dict[str, str] = {}
+    not_required_fields: set[str] = set()
 
     def __init__(self, model, admin_site):
         self.list_display = [field for field in self._list_display if field not in self.hidden_fields]
@@ -40,6 +41,12 @@ class BaseAdmin(admin.ModelAdmin):
 
         super().__init__(model, admin_site)
 
+    def get_form(self, request, obj = None, **kwargs):
+        form = super().get_form(request, obj, **kwargs)
+        for field_name in self.not_required_fields:
+            form.base_fields[field_name].required = False
+        return form
+
     @property
     def _list_display(self) -> tuple:
         # noinspection PyProtectedMember
@@ -48,10 +55,12 @@ class BaseAdmin(admin.ModelAdmin):
 
 class UserbotAdmin(BaseAdmin):
     model = models.Userbot
+    not_required_fields = ("day_channels_join_counter",)
 
 
 class ChanelAdmin(BaseAdmin):
     model = models.Channel
+    not_required_fields = ("userbot",)
 
 
 class ProjectAdmin(BaseAdmin):

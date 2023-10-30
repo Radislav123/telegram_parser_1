@@ -20,7 +20,7 @@ class Userbot(BaseModel):
     name = models.CharField(max_length = 255, null = True)
     phone = models.CharField(max_length = 50, unique = True)
     last_channel_join_date = models.DateField(auto_now = True)
-    day_channels_join_counter = models.IntegerField()
+    day_channels_join_counter = models.IntegerField(default = 0)
 
 
 # проверяемые чаты
@@ -32,6 +32,6 @@ class Channel(BaseModel):
 
 class Project(BaseModel):
     name = models.CharField(max_length = 255, unique = True)
-    keywords = models.TextField()
-    stop_words = models.TextField()
+    keywords = models.TextField(blank = True)
+    stop_words = models.TextField(blank = True)
     post_channel = models.IntegerField()
