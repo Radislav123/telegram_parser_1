@@ -96,6 +96,8 @@ class UserbotClient(pyrogram.Client):
                 )
 
     def check_project(self, message: pyrogram.types.Message, project: models.Project) -> bool:
+        # todo: remove print
+        print(message.text)
         check = False
         if message.text is None:
             text = ""
