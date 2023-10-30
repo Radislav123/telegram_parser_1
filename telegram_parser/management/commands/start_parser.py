@@ -80,6 +80,9 @@ class UserbotClient(pyrogram.Client):
                     else:
                         title = chat.invite_link
                 text.append(f"Чат: {title}")
+                print(message.date)
+                print(message.date.now())
+                print(message)
                 text.append(f"Дата и время: {message.date}")
 
                 if message.from_user is not None:
