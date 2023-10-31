@@ -12,8 +12,8 @@
 Запустить файл [*start/runserver.sh*](start/runserver.sh).
 
 ## Парсер
-Запустить файл [*start/runserver.sh*](start/runserver.sh).
+Запустить файл [*start/start_parser.sh*](start/start_parser.sh).
 
 # Настройки сервера
 
-1) расположение `/parser/`
+1) расположение `/parser/telegram_parser_1/`

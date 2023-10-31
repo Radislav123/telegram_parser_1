@@ -31,6 +31,9 @@ class Settings:
         self.PYROGRAM_SECRETS_FOLDER = f"{self.SECRETS_FOLDER}/pyrogram"
         self.PYROGRAM_CREDENTIALS_PATH = f"{self.PYROGRAM_SECRETS_FOLDER}/credentials.json"
 
+        self.DJANGO_SECRETS_FOLDER = f"{self.SECRETS_FOLDER}/django"
+        self.DJANGO_CREDENTIALS_PATH = f"{self.DJANGO_SECRETS_FOLDER}/credentials.json"
+
         # Настройки логгера
         self.LOG_FORMAT = ("[%(asctime)s] - [%(levelname)s] - %(name)s -"
                            " (%(filename)s).%(funcName)s(%(lineno)d) - %(message)s")

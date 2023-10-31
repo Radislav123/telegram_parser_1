@@ -38,6 +38,9 @@ class SecretKeeper:
         api_id: int
         api_hash: str
 
+    class Django(Module):
+        secret_key: str
+
     class TestData(Module):
         channels: list[Channel]
         projects: list[Project]
@@ -47,6 +50,7 @@ class SecretKeeper:
     admin_user: ParserUser
     developer: Developer
     pyrogram: Pyrogram
+    django: Django
     test_data: TestData
 
     def __init__(self, settings: "Settings") -> None:
@@ -54,6 +58,7 @@ class SecretKeeper:
         self.add_module("admin_user", settings.ADMIN_USER_CREDENTIALS_PATH)
         self.add_module("developer", settings.DEVELOPER_CREDENTIALS_PATH)
         self.add_module("pyrogram", settings.PYROGRAM_CREDENTIALS_PATH)
+        self.add_module("django", settings.DJANGO_CREDENTIALS_PATH)
         try:
             self.add_module("test_data", settings.TEST_DATA_PATH)
             self.prepare_test_data()
