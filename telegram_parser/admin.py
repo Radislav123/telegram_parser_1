@@ -55,7 +55,7 @@ class BaseAdmin(admin.ModelAdmin):
 
 class UserbotAdmin(BaseAdmin):
     model = models.Userbot
-    not_required_fields = ("day_channels_join_counter",)
+    not_required_fields = ("day_channels_join_counter", "verification_code")
 
 
 class ChanelAdmin(BaseAdmin):

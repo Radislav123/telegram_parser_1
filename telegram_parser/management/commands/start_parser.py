@@ -1,5 +1,6 @@
 import asyncio
 import datetime
+import time
 from pathlib import Path
 
 import pyrogram.errors.exceptions
@@ -125,6 +126,33 @@ class UserbotClient(pyrogram.Client):
                     break
         return check
 
+    # переопределено для того, чтобы вводить код подтверждения не в консоль, а в панели администратора
+    async def authorize(self) -> pyrogram.types.User:
+        user_object: models.Userbot = await models.Userbot.objects.aget(phone = self.phone_number)
+        sent_code = await self.send_code(self.phone_number)
+
+        sent_code_descriptions = {
+            pyrogram.enums.SentCodeType.APP: "Telegram app",
+            pyrogram.enums.SentCodeType.SMS: "SMS",
+            pyrogram.enums.SentCodeType.CALL: "phone call",
+            pyrogram.enums.SentCodeType.FLASH_CALL: "phone flash call",
+            pyrogram.enums.SentCodeType.FRAGMENT_SMS: "Fragment SMS",
+            pyrogram.enums.SentCodeType.EMAIL_CODE: "email code"
+        }
+        print(f"The confirmation code has been sent via {sent_code_descriptions[sent_code.type]}")
+
+        while not user_object.verification_code:
+            time.sleep(3)
+            user_object: models.Userbot = await models.Userbot.objects.aget(phone = self.phone_number)
+        else:
+            self.phone_code = user_object.verification_code
+            user_object.verification_code = None
+            await user_object.asave()
+            try:
+                return await self.sign_in(self.phone_number, sent_code.phone_code_hash, self.phone_code)
+            except pyrogram.errors.SessionPasswordNeeded:
+                return await self.check_password(self.password)
+
 
 async def channel_filter(_, userbot: UserbotClient, query: pyrogram.types.Message) -> bool:
     return query.chat.id in userbot.channels
@@ -166,7 +194,8 @@ class Command(telegram_parser_command.TelegramParserCommand):
             self.settings.secrets.pyrogram.api_id,
             self.settings.secrets.pyrogram.api_hash,
             phone_number = user.phone,
-            workdir = self.settings.PYROGRAM_SESSION_FOLDER
+            workdir = self.settings.PYROGRAM_SESSION_FOLDER,
+            password = user.cloud_password
         )
 
         userbot.on_message(channel_filter)(userbot.track)
