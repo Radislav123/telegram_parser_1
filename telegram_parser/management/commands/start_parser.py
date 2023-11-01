@@ -23,6 +23,7 @@ def split(text: str, separators: set[str]) -> list[str]:
 class UserbotClient(pyrogram.Client):
     settings = settings.Settings()
     db_object: models.Userbot
+    projects: list[models.Project]
 
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
@@ -33,10 +34,28 @@ class UserbotClient(pyrogram.Client):
     async def prepare(self, channels: dict[int, models.Channel]) -> None:
         self.db_object = await models.Userbot.objects.aget(phone = self.phone_number)
 
+        # проверка вступления в канал для пересылки
+        self.projects = await sync_to_async(list)(models.Project.objects.all())
+        await self.check_post_channels()
+
+        # проверка вступления в каналы для мониторинга
         await self.check_channels(channels)
         await models.Channel.objects.filter(id__in = (x.id for x in self.channels.values())).aupdate(
             userbot = self.db_object
         )
+
+    async def check_post_channels(self) -> None:
+        for project in self.projects:
+            try:
+                await self.get_chat_member(project.post_channel, "me")
+            except pyrogram.errors.exceptions.UserNotParticipant:
+                if self.db_object.day_channels_join_counter < self.settings.MAX_DAY_CHANNEL_JOINS:
+                    self.db_object.last_channel_join_date = datetime.date.today()
+                    try:
+                        await self.join_chat(project.post_channel)
+                        self.db_object.day_channels_join_counter += 1
+                    except Exception as exception:
+                        self.logger.exception(str(exception))
 
     async def check_channels(self, channels: dict[int, models.Channel]) -> None:
         if self.db_object.last_channel_join_date < datetime.date.today():
@@ -64,8 +83,7 @@ class UserbotClient(pyrogram.Client):
 
     @staticmethod
     async def track(self: "UserbotClient", message: pyrogram.types.Message) -> None:
-        projects = await sync_to_async(set)(models.Project.objects.all())
-        for project in projects:
+        for project in self.projects:
             if self.check_project(message, project):
                 chat = await self.get_chat(message.chat.id)
                 text = ["➖➖➖➖➖➖➖➖➖➖"]
