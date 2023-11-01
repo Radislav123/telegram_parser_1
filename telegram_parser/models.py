@@ -11,6 +11,13 @@ class BaseModel(models.Model):
     settings = Settings()
     logger = logger.Logger(Meta.__qualname__[:-5])
 
+    def __str__(self) -> str:
+        if hasattr(self, "name"):
+            string = self.name
+        else:
+            string = super().__str__()
+        return string
+
     @classmethod
     def get_field_verbose_name(cls, field_name: str) -> str:
         return cls._meta.get_field(field_name).verbose_name
@@ -28,12 +35,24 @@ class Userbot(BaseModel):
 # проверяемые чаты
 class Channel(BaseModel):
     name = models.CharField(max_length = 255, null = True)
-    telegram_id = models.IntegerField(unique = True)
-    userbot = models.ForeignKey(Userbot, on_delete = models.RESTRICT, null = True)
+    link = models.CharField(max_length = 255)
+    telegram_id = models.IntegerField(null = True)
 
 
 class Project(BaseModel):
     name = models.CharField(max_length = 255, unique = True)
     keywords = models.TextField(blank = True)
     stop_words = models.TextField(blank = True)
-    post_channel = models.IntegerField()
+    post_channel_link = models.CharField(max_length = 255)
+    post_channel_telegram_id = models.IntegerField(null = True)
+
+
+# сопоставление ботов и каналов, на которые бот подписан
+class UserbotChannel(BaseModel):
+    userbot = models.ForeignKey(Userbot, models.RESTRICT)
+    channel = models.ForeignKey(Channel, models.RESTRICT)
+
+
+class UserbotProject(BaseModel):
+    userbot = models.ForeignKey(Userbot, models.RESTRICT)
+    project = models.ForeignKey(Project, models.RESTRICT)

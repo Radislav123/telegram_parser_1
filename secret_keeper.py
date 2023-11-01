@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, TypedDict
 if TYPE_CHECKING:
     from telegram_parser.settings import Settings
 
-Userbot = TypedDict("Userbot", {"name": str, "phone": str})
+Userbot = TypedDict("Userbot", {"name": str, "phone": str, "cloud_password": str})
 Channel = TypedDict("Channel", {"name": str, "telegram_id": int})
 Project = TypedDict("Project", {"name": str, "keywords": list[str], "stop_words": list[str], "post_channel": int})
 

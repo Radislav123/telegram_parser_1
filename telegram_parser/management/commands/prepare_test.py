@@ -11,6 +11,8 @@ class Command(telegram_parser_command.TelegramParserCommand):
 
     @staticmethod
     def clear_db() -> None:
+        models.UserbotChannel.objects.all().delete()
+        models.UserbotProject.objects.all().delete()
         models.Channel.objects.all().delete()
         models.Userbot.objects.all().delete()
         models.Project.objects.all().delete()
@@ -20,6 +22,7 @@ class Command(telegram_parser_command.TelegramParserCommand):
             models.Userbot(
                 name = userbot["name"],
                 phone = userbot["phone"],
+                cloud_password = userbot["cloud_password"],
                 day_channels_join_counter = 0
             ) for userbot in self.settings.secrets.test_data.userbots.values()
         ]
@@ -28,7 +31,7 @@ class Command(telegram_parser_command.TelegramParserCommand):
         channels = [
             models.Channel(
                 name = channel["name"],
-                telegram_id = channel["telegram_id"]
+                link = channel["link"]
             ) for channel in self.settings.secrets.test_data.channels
         ]
         models.Channel.objects.bulk_create(channels)
@@ -38,7 +41,7 @@ class Command(telegram_parser_command.TelegramParserCommand):
                 name = project["name"],
                 keywords = self.settings.KEYWORD_SEPARATORS[0].join(project["keywords"]),
                 stop_words = self.settings.STOP_WORD_SEPARATORS[0].join(project["stop_words"]),
-                post_channel = project["post_channel"]
+                post_channel_link = project["post_channel_link"]
             ) for project in self.settings.secrets.test_data.projects
         ]
         models.Project.objects.bulk_create(projects)

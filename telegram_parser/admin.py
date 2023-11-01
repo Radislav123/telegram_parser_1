@@ -61,12 +61,21 @@ class UserbotAdmin(BaseAdmin):
 
 class ChanelAdmin(BaseAdmin):
     model = models.Channel
-    not_required_fields = ("userbot",)
+    not_required_fields = ("telegram_id",)
 
 
 class ProjectAdmin(BaseAdmin):
     model = models.Project
+    not_required_fields = ("post_channel_telegram_id",)
 
 
-model_admins_to_register = [UserbotAdmin, ChanelAdmin, ProjectAdmin]
+class UserbotChannel(BaseAdmin):
+    model = models.UserbotChannel
+
+
+class UserbotProject(BaseAdmin):
+    model = models.UserbotProject
+
+
+model_admins_to_register = [UserbotAdmin, ChanelAdmin, ProjectAdmin, UserbotChannel, UserbotProject]
 register_models(model_admins_to_register)
