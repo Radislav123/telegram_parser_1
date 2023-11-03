@@ -170,7 +170,7 @@ class UserbotClient(pyrogram.Client):
         }
         print(
             f"The confirmation code has been sent via {sent_code_descriptions[sent_code.type]}"
-            f" to {user_object.name} ({user_object.phone})"
+            f" to {user_object.name} ({user_object.phone})."
         )
 
         while not user_object.verification_code:
