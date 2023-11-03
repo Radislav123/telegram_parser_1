@@ -38,6 +38,19 @@ class Channel(BaseModel):
     link = models.CharField(max_length = 255)
     telegram_id = models.IntegerField(null = True)
 
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        self._username: str | None = None
+
+    @property
+    def username(self) -> str:
+        if self._username is None:
+            if self.link.startswith("http"):
+                self._username = self.link.split('/')[-1]
+            else:
+                self._username = self.link
+        return self._username
+
 
 class Project(BaseModel):
     name = models.CharField(max_length = 255, unique = True)

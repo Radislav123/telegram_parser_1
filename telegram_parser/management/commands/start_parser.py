@@ -30,7 +30,7 @@ class UserbotClient(pyrogram.Client):
         super().__init__(*args, **kwargs)
 
         self.logger = logger.Logger(self.__class__.__name__)
-        self.channels: dict[int, models.Channel] = {}
+        self.channels: dict[str, models.Channel] = {}
 
     async def prepare(self, channels: dict[int, models.Channel]) -> None:
         self.db_object = await models.Userbot.objects.aget(phone = self.phone_number)
@@ -70,28 +70,28 @@ class UserbotClient(pyrogram.Client):
 
         for channel in channels.values():
             if not await models.UserbotChannel.objects.filter(userbot = self.db_object, channel = channel).aexists():
-                chat = await self.get_chat(channel.link)
+                chat = await self.get_chat(channel.username)
                 if channel.telegram_id is None:
                     channel.telegram_id = chat.id
                     await channel.asave()
                 if chat.type != pyrogram.enums.ChatType.PRIVATE and chat.type != pyrogram.enums.ChatType.BOT:
                     try:
                         await self.get_chat_member(chat.id, "me")
-                        self.channels[channel.telegram_id] = channel
-                    except AttributeError:
+                        self.channels[channel.username] = channel
+                    except (AttributeError, pyrogram.errors.exceptions.UserNotParticipant):
                         if self.db_object.day_channels_join_counter < self.settings.MAX_DAY_CHANNEL_JOINS:
                             self.db_object.last_channel_join_date = datetime.date.today()
                             try:
-                                await self.join_chat(channel.link)
+                                await self.join_chat(channel.username)
                                 self.db_object.day_channels_join_counter += 1
-                                self.channels[channel.telegram_id] = channel
+                                self.channels[channel.username] = channel
                             except Exception as exception:
                                 self.logger.exception(str(exception))
                 else:
-                    self.channels[channel.telegram_id] = channel
+                    self.channels[channel.username] = channel
                 await models.UserbotChannel(userbot = self.db_object, channel = channel).asave()
             else:
-                self.channels[channel.telegram_id] = channel
+                self.channels[channel.username] = channel
 
         await self.db_object.asave()
 
@@ -201,7 +201,7 @@ class Command(telegram_parser_command.TelegramParserCommand):
         # создается папка для хранения сессий pyrogram
         Path(self.settings.PYROGRAM_SESSION_FOLDER).mkdir(parents = True, exist_ok = True)
         userbots: dict[str, pyrogram.Client] = {}
-        channels = {x.telegram_id: x for x in await sync_to_async(set)(models.Channel.objects.all())}
+        channels = {x.username: x for x in await sync_to_async(set)(models.Channel.objects.all())}
 
         self.logger.info("Userbots are starting.")
         shuffled_userbots: list[models.Userbot] = await sync_to_async(list)(models.Userbot.objects.all())
@@ -209,12 +209,11 @@ class Command(telegram_parser_command.TelegramParserCommand):
         for user in shuffled_userbots:
             userbot = await self.get_userbot(user, channels)
             userbots[user.phone] = userbot
-            channels = {telegram_id: channel for telegram_id, channel in channels.items()
-                        if telegram_id not in userbot.channels}
+            channels = {username: channel for username, channel in channels.items() if username not in userbot.channels}
         self.logger.info("All userbots were started.")
         if len(channels) > 0:
-            self.logger.warning(f"Not tracking channels amount: {len(channels)}:")
-            self.logger.warning(channels)
+            self.logger.warning(f"Not tracking channels amount: {len(channels)}")
+            self.logger.warning({username: channel for username, channel in channels.items()})
 
         await pyrogram.idle()
 
