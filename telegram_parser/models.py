@@ -4,6 +4,16 @@ import logger
 from .settings import Settings
 
 
+def get_username_from_link(link: str) -> str:
+    if link.startswith("http"):
+        username = link.split('/')[-1]
+        if username.startswith('+'):
+            username = link
+    else:
+        username = link
+    return username
+
+
 class BaseModel(models.Model):
     class Meta:
         abstract = True
@@ -45,10 +55,7 @@ class Channel(BaseModel):
     @property
     def username(self) -> str:
         if self._username is None:
-            if self.link.startswith("http"):
-                self._username = self.link.split('/')[-1]
-            else:
-                self._username = self.link
+            self._username = get_username_from_link(self.link)
         return self._username
 
 
@@ -58,6 +65,16 @@ class Project(BaseModel):
     stop_words = models.TextField(blank = True)
     post_channel_link = models.CharField(max_length = 255)
     post_channel_telegram_id = models.IntegerField(null = True)
+
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        self._post_channel_username: str | None = None
+
+    @property
+    def post_channel_username(self) -> str:
+        if self._post_channel_username is None:
+            self._post_channel_username = get_username_from_link(self.post_channel_link)
+        return self._post_channel_username
 
 
 # сопоставление ботов и каналов, на которые бот подписан

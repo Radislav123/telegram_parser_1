@@ -14,7 +14,7 @@ class Settings:
         self.KEYWORD_SEPARATORS = ['\n', '\r', '\r\n']
         self.STOP_WORD_SEPARATORS = ['\n', '\r', '\r\n']
 
-        self.MAX_DAY_CHANNEL_JOINS = 30
+        self.MAX_DAY_CHANNEL_JOINS = 5
 
         # Пути секретов
         self.SECRETS_FOLDER = "secrets"
