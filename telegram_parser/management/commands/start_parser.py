@@ -22,7 +22,7 @@ def split(text: str, separators: set[str]) -> list[str]:
 
 class UserbotClient(pyrogram.Client):
     settings = settings.Settings()
-    db_object: models.Userbot
+    db_object: models.Userbot = None
     projects: list[models.Project]
 
     def __init__(self, *args, **kwargs) -> None:
@@ -30,6 +30,12 @@ class UserbotClient(pyrogram.Client):
 
         self.logger = logger.Logger(self.__class__.__name__)
         self.channels: dict[int, models.Channel] = {}
+
+    async def stop(self, *args, **kwargs) -> "UserbotClient":
+        if self.db_object is not None:
+            self.db_object.active = False
+            await self.db_object.asave()
+        return await super().stop(*args, **kwargs)
 
     async def prepare(self, channels: dict[int, models.Channel]) -> None:
         self.db_object = await models.Userbot.objects.aget(phone = self.phone_number)
@@ -42,6 +48,9 @@ class UserbotClient(pyrogram.Client):
         await self.check_channels(channels)
 
         # изменяется day_channels_join_counter
+        await self.db_object.asave()
+
+        self.db_object.active = True
         await self.db_object.asave()
 
     async def check_projects(self) -> None:
@@ -68,35 +77,36 @@ class UserbotClient(pyrogram.Client):
             self.db_object.day_channels_join_counter = 0
 
         for channel in channels.values():
-            # этот бот уже вступал в этот канал
-            if await models.UserbotChannel.objects.filter(userbot = self.db_object, channel = channel).aexists():
-                self.channels[channel.telegram_id] = channel
-            # другой бот уже вступал в этот канал
-            elif await models.UserbotChannel.objects.filter(channel = channel).aexists():
-                pass
-            # никакой бот не вступал в этот канал
-            else:
-                chat = await self.get_chat(channel.username)
-                if channel.telegram_id is None:
-                    channel.telegram_id = chat.id
-                    await channel.asave()
-                if chat.type != pyrogram.enums.ChatType.PRIVATE and chat.type != pyrogram.enums.ChatType.BOT:
-                    try:
-                        await self.get_chat_member(chat.id, "me")
-                        self.channels[channel.telegram_id] = channel
-                    except (AttributeError, pyrogram.errors.exceptions.UserNotParticipant):
+            try:
+                # этот бот уже вступал в этот канал
+                if await models.UserbotChannel.objects.filter(userbot = self.db_object, channel = channel).aexists():
+                    self.channels[channel.telegram_id] = channel
+                # другой бот уже вступал в этот канал
+                elif await models.UserbotChannel.objects.filter(channel = channel).aexists():
+                    pass
+                # никакой бот не вступал в этот канал
+                else:
+                    chat_preview: pyrogram.types.ChatPreview = await self.get_chat(channel.username)
+                    if (chat_preview.type != pyrogram.enums.ChatType.PRIVATE and
+                            chat_preview.type != pyrogram.enums.ChatType.BOT):
                         if self.db_object.day_channels_join_counter < self.settings.MAX_DAY_CHANNEL_JOINS:
                             self.db_object.last_channel_join_date = datetime.date.today()
                             try:
                                 await self.join_chat(channel.username)
                                 self.db_object.day_channels_join_counter += 1
                                 await self.db_object.asave()
+                                if channel.telegram_id is None:
+                                    chat: pyrogram.types.Chat = await self.get_chat(channel.username)
+                                    channel.telegram_id = chat.id
+                                    await channel.asave()
                                 self.channels[channel.telegram_id] = channel
                             except Exception as exception:
                                 self.logger.exception(str(exception))
-                else:
-                    self.channels[channel.telegram_id] = channel
-                await models.UserbotChannel(userbot = self.db_object, channel = channel).asave()
+                    else:
+                        self.channels[channel.telegram_id] = channel
+                    await models.UserbotChannel(userbot = self.db_object, channel = channel).asave()
+            except Exception as error:
+                self.logger.exception(str(error))
 
     @staticmethod
     async def track(self: "UserbotClient", message: pyrogram.types.Message) -> None:
@@ -204,17 +214,26 @@ class Command(telegram_parser_command.TelegramParserCommand):
         asyncio.run(self.run())
 
     async def run(self) -> None:
+        old_users = await sync_to_async(list)(models.Userbot.objects.all())
+        for user in old_users:
+            user.active = None
+            await user.asave()
+
         # создается папка для хранения сессий pyrogram
         Path(self.settings.PYROGRAM_SESSION_FOLDER).mkdir(parents = True, exist_ok = True)
         userbots: dict[str, pyrogram.Client] = {}
-        channels = {x.telegram_id: x for x in await sync_to_async(set)(models.Channel.objects.all())}
+        channels = {x.link: x for x in await sync_to_async(set)(models.Channel.objects.all())}
 
         self.logger.info("Userbots are starting.")
         for user in await sync_to_async(list)(models.Userbot.objects.all()):
-            userbot = await self.get_userbot(user, channels)
-            userbots[user.phone] = userbot
-            channels = {telegram_id: channel for telegram_id, channel in channels.items()
-                        if telegram_id not in userbot.channels}
+            try:
+                userbot = await self.get_userbot(user, channels)
+                userbots[user.phone] = userbot
+                channels = {link: channel for link, channel in channels.items()
+                            if channel.telegram_id not in userbot.channels}
+            except Exception as error:
+                self.logger.warning(user.name)
+                self.logger.warning(error)
         self.logger.info("All userbots were started.")
         if len(channels) > 0:
             self.logger.warning(f"Not tracking channels amount: {len(channels)}")

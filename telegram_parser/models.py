@@ -6,8 +6,11 @@ from .settings import Settings
 
 def get_username_from_link(link: str) -> str:
     if link.startswith("http"):
-        username = link.split('/')[-1]
+        parts = link.split('/')
+        username = parts[-1]
         if username.startswith('+'):
+            username = link
+        elif len(parts) > 1 and parts[-2] == "joinchat":
             username = link
     else:
         username = link
@@ -40,6 +43,7 @@ class Userbot(BaseModel):
     day_channels_join_counter = models.IntegerField(default = 0)
     cloud_password = models.CharField(max_length = 100, blank = True)
     verification_code = models.CharField(max_length = 100, null = True)
+    active = models.BooleanField(null = True)
 
 
 # проверяемые чаты
