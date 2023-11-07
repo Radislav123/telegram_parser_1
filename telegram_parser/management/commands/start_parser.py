@@ -68,7 +68,14 @@ class UserbotClient(pyrogram.Client):
             self.db_object.day_channels_join_counter = 0
 
         for channel in channels.values():
-            if not await models.UserbotChannel.objects.filter(userbot = self.db_object, channel = channel).aexists():
+            # этот бот уже вступал в этот канал
+            if await models.UserbotChannel.objects.filter(userbot = self.db_object, channel = channel).aexists():
+                self.channels[channel.telegram_id] = channel
+            # другой бот уже вступал в этот канал
+            elif await models.UserbotChannel.objects.filter(channel = channel).aexists():
+                pass
+            # никакой бот не вступал в этот канал
+            else:
                 chat = await self.get_chat(channel.username)
                 if channel.telegram_id is None:
                     channel.telegram_id = chat.id
@@ -90,8 +97,6 @@ class UserbotClient(pyrogram.Client):
                 else:
                     self.channels[channel.telegram_id] = channel
                 await models.UserbotChannel(userbot = self.db_object, channel = channel).asave()
-            else:
-                self.channels[channel.telegram_id] = channel
 
     @staticmethod
     async def track(self: "UserbotClient", message: pyrogram.types.Message) -> None:
