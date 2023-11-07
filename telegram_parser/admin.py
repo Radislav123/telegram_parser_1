@@ -55,8 +55,14 @@ class BaseAdmin(admin.ModelAdmin):
 
 class UserbotAdmin(BaseAdmin):
     model = models.Userbot
+    extra_list_display = {"new_day_channels_join_counter": None}
     not_required_fields = ("day_channels_join_counter", "verification_code")
-    hidden_fields = ("cloud_password", "verification_code")
+    hidden_fields = ("cloud_password", "verification_code", "day_channels_join_counter")
+
+    def new_day_channels_join_counter(self, obj: model) -> str:
+        return f"{obj.day_channels_join_counter}/{self.settings.MAX_DAY_CHANNEL_JOINS}"
+
+    new_day_channels_join_counter.short_description = "day channels join counter"
 
 
 class ChanelAdmin(BaseAdmin):

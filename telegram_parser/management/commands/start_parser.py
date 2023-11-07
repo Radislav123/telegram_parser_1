@@ -1,6 +1,5 @@
 import asyncio
 import datetime
-import random
 import time
 from pathlib import Path
 
@@ -206,9 +205,7 @@ class Command(telegram_parser_command.TelegramParserCommand):
         channels = {x.telegram_id: x for x in await sync_to_async(set)(models.Channel.objects.all())}
 
         self.logger.info("Userbots are starting.")
-        shuffled_userbots: list[models.Userbot] = await sync_to_async(list)(models.Userbot.objects.all())
-        random.shuffle(shuffled_userbots)
-        for user in shuffled_userbots:
+        for user in await sync_to_async(list)(models.Userbot.objects.all()):
             userbot = await self.get_userbot(user, channels)
             userbots[user.phone] = userbot
             channels = {telegram_id: channel for telegram_id, channel in channels.items()
