@@ -100,18 +100,19 @@ class UserbotClient(pyrogram.Client):
                                     channel.telegram_id = chat.id
                                     await channel.asave()
                                 self.channels[channel.telegram_id] = channel
+                                await models.UserbotChannel(userbot = self.db_object, channel = channel).asave()
                             except Exception as exception:
                                 self.logger.exception(str(exception))
                     else:
                         self.channels[channel.telegram_id] = channel
-                    await models.UserbotChannel(userbot = self.db_object, channel = channel).asave()
+                        await models.UserbotChannel(userbot = self.db_object, channel = channel).asave()
             except Exception as error:
                 self.logger.exception(str(error))
 
     @staticmethod
     async def track(self: "UserbotClient", message: pyrogram.types.Message) -> None:
         for project in self.projects:
-            if self.check_project(message, project):
+            if self.track_project(message, project):
                 chat = await self.get_chat(message.chat.id)
                 text = ["➖➖➖➖➖➖➖➖➖➖"]
 
@@ -152,7 +153,7 @@ class UserbotClient(pyrogram.Client):
                     disable_web_page_preview = True
                 )
 
-    def check_project(self, message: pyrogram.types.Message, project: models.Project) -> bool:
+    def track_project(self, message: pyrogram.types.Message, project: models.Project) -> bool:
         check = False
         if message.text is None:
             text = ""
