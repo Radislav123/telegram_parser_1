@@ -39,6 +39,8 @@ class UserbotClient(pyrogram.Client):
 
     async def prepare(self, channels: dict[int, models.Channel]) -> None:
         self.db_object = await models.Userbot.objects.aget(phone = self.phone_number)
+        if self.db_object.last_channel_join_date < datetime.date.today():
+            self.db_object.day_channels_join_counter = 0
 
         # проверка вступления в канал для пересылки
         self.projects = await sync_to_async(list)(models.Project.objects.all())
@@ -71,9 +73,6 @@ class UserbotClient(pyrogram.Client):
                 await models.UserbotProject(userbot = self.db_object, project = project).asave()
 
     async def check_channels(self, channels: dict[int, models.Channel]) -> None:
-        if self.db_object.last_channel_join_date < datetime.date.today():
-            self.db_object.day_channels_join_counter = 0
-
         for channel in channels.values():
             try:
                 # этот бот уже вступал в этот канал
