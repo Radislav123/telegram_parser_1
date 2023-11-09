@@ -99,10 +99,10 @@ class Project(BaseModel):
 
 # сопоставление ботов и каналов, на которые бот подписан
 class UserbotChannel(BaseModel):
-    userbot = models.ForeignKey(Userbot, models.RESTRICT)
-    channel = models.ForeignKey(Channel, models.RESTRICT)
+    userbot = models.ForeignKey(Userbot, models.CASCADE)
+    channel = models.ForeignKey(Channel, models.CASCADE)
 
 
 class UserbotProject(BaseModel):
-    userbot = models.ForeignKey(Userbot, models.RESTRICT)
-    project = models.ForeignKey(Project, models.RESTRICT)
+    userbot = models.ForeignKey(Userbot, models.CASCADE)
+    project = models.ForeignKey(Project, models.CASCADE)
