@@ -47,9 +47,6 @@ class UserbotClient(pyrogram.Client):
         # проверка вступления в каналы для мониторинга
         await self.check_channels(channels)
 
-        # изменяется day_channels_join_counter
-        await self.db_object.asave()
-
         self.db_object.active = True
         await self.db_object.asave()
 
@@ -68,6 +65,7 @@ class UserbotClient(pyrogram.Client):
                         try:
                             await self.join_chat(project.post_channel_username)
                             self.db_object.day_channels_join_counter += 1
+                            self.db_object.update_join_date()
                         except Exception as exception:
                             self.logger.exception(str(exception))
                 await models.UserbotProject(userbot = self.db_object, project = project).asave()
@@ -94,6 +92,7 @@ class UserbotClient(pyrogram.Client):
                             try:
                                 await self.join_chat(channel.username)
                                 self.db_object.day_channels_join_counter += 1
+                                self.db_object.update_join_date()
                                 await self.db_object.asave()
                                 if channel.telegram_id is None:
                                     chat: pyrogram.types.Chat = await self.get_chat(channel.username)

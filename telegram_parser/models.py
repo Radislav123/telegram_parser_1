@@ -1,3 +1,5 @@
+import datetime
+
 from django.db import models
 
 import logger
@@ -39,11 +41,25 @@ class BaseModel(models.Model):
 class Userbot(BaseModel):
     name = models.CharField(max_length = 255, null = True)
     phone = models.CharField(max_length = 50, unique = True)
-    last_channel_join_date = models.DateField(auto_now = True)
+    last_channel_join_date = models.DateField()
     day_channels_join_counter = models.IntegerField(default = 0)
     cloud_password = models.CharField(max_length = 100, blank = True)
     verification_code = models.CharField(max_length = 100, null = True)
     active = models.BooleanField(null = True)
+
+    def save(self, *args, **kwargs) -> None:
+        if self.last_channel_join_date is None:
+            self.last_channel_join_date = datetime.datetime.today()
+        super().save(*args, **kwargs)
+
+    # noinspection SpellCheckingInspection
+    async def asave(self, *args, **kwargs) -> None:
+        if self.last_channel_join_date is None:
+            self.last_channel_join_date = datetime.datetime.today()
+        await super().asave(*args, **kwargs)
+
+    def update_join_date(self) -> None:
+        self.last_channel_join_date = datetime.datetime.today()
 
 
 # проверяемые чаты
