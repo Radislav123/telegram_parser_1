@@ -183,7 +183,7 @@ class UserbotClient(pyrogram.Client):
             pyrogram.enums.SentCodeType.FRAGMENT_SMS: "Fragment SMS",
             pyrogram.enums.SentCodeType.EMAIL_CODE: "email code"
         }
-        print(
+        self.logger.info(
             f"The confirmation code has been sent via {sent_code_descriptions[sent_code.type]}"
             f" to {user_object.name} ({user_object.phone})."
         )
